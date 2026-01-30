@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CAFE 24x7 | Smart Menu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --brand: #e67e22; --dark: #121212; --white: #ffffff; --bg: #fdfaf6; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--bg); color: var(--dark); padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
+        header { background: #1a1a1a; padding: 25px 15px; text-align: center; border-bottom: 4px solid var(--brand); position: sticky; top: 0; z-index: 1000; }
+        .logo { font-size: 24px; font-weight: 800; color: var(--brand); margin: 0; letter-spacing: 2px; }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .category-header { margin: 30px 0 15px; display: flex; align-items: center; }
+        .category-header h2 { font-size: 14px; font-weight: 800; color: var(--brand); text-transform: uppercase; margin: 0; white-space: nowrap; }
+        .category-header hr { flex-grow: 1; border: none; border-top: 1px solid #ddd; margin-left: 15px; }
+        .item-card { background: var(--white); border-radius: 15px; display: flex; padding: 10px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); align-items: center; }
+        .item-img { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; }
+        .item-info { flex: 1; padding-left: 12px; }
+        .item-info h4 { margin: 0; font-size: 14px; font-weight: 600; }
+        .item-info p { font-size: 10px; color: #777; margin: 3px 0; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .price { font-size: 15px; font-weight: 800; }
+        .add-btn { background: var(--white); color: var(--brand); border: 1.5px solid var(--brand); padding: 4px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 10px; }
+        .cart-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background: var(--dark); color: white; padding: 15px; border-radius: 15px; display: none; justify-content: space-between; align-items: center; z-index: 1001; box-sizing: border-box; }
+        .view-btn { background: var(--brand); border: none; color: white; padding: 8px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: flex-end; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; box-sizing: border-box; max-height: 80vh; overflow-y: auto; }
+        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        select { width: 100%; padding: 12px; border-radius: 10px; margin: 10px 0 20px; border: 1px solid #ddd; font-family: 'Poppins'; }
+    </style>
+</head>
+<body>
+
+<header><h1 class="logo">THE CAFE 24x7</h1></header>
+
+<div class="container" id="menu-content"></div>
+
+<div class="cart-bar" id="cartBar">
+    <div id="cartStatus">0 Items | ₹0</div>
+    <button class="view-btn" onclick="openOrder()">Review Order</button>
+</div>
+
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">Your Order</h3>
+        <div id="cartDisplay"></div>
+        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:18px; margin:20px 0;">
+            <span>Total</span><span>₹<span id="totalSum">0</span></span>
+        </div>
+        <label><b>Table Number:</b></label>
+        <select id="tableSelect">
+            <option value="">Choose Table</option>
+            <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">Table ${i}</option>`);</script>
+        </select>
+        <button class="view-btn" style="width:100%; padding:15px;" onclick="placeFinalOrder()">Send Order via WhatsApp</button>
+        <p onclick="closeOrder()" style="text-align:center; color:#888; margin-top:15px; cursor:pointer;">Close</p>
+    </div>
+</div>
+
+<script>
+    const menuData = [
+        { id: 1, name: "Cold Coffee Classic", price: 90, cat: "Premium Coffees", desc: "Creamy & Chilled", img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?w=200" },
+        { id: 2, name: "Hazelnut Latte", price: 150, cat: "Premium Coffees", desc: "Nutty Hot Coffee", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200" },
+        { id: 3, name: "Cappuccino", price: 120, cat: "Premium Coffees", desc: "Classic Froth", img: "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=200" },
+        { id: 4, name: "Cold Brew", price: 170, cat: "Premium Coffees", desc: "Bold & Strong", img: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=200" },
+        { id: 5, name: "Espresso Shot", price: 100, cat: "Premium Coffees", desc: "Dark & Intense", img: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=200" },
+
+        { id: 6, name: "Oreo Milkshake", price: 160, cat: "Refreshing Beverages", desc: "Crunchy Oreo", img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200" },
+        { id: 7, name: "Strawberry Bliss", price: 150, cat: "Refreshing Beverages", desc: "Berry delight", img: "https://images.unsplash.com/photo-1579954115545-a95591f28abb?w=200" },
+        { id: 8, name: "Iced Lemon Tea", price: 80, cat: "Refreshing Beverages", desc: "Lemon Punch", img: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=200" },
+        { id: 9, name: "Virgin Mojito", price: 120, cat: "Refreshing Beverages", desc: "Minty Fresh", img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=200" },
+        { id: 10, name: "Vanilla Shake", price: 110, cat: "Refreshing Beverages", desc: "Classic Creamy", img: "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=200" },
+
+        { id: 11, name: "Peri Peri Pizza", price: 299, cat: "Gourmet Pizzas", desc: "Spicy Veggies", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200" },
+        { id: 12, name: "Farmhouse Pizza", price: 279, cat: "Gourmet Pizzas", desc: "Fresh Veggie Loaded", img: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=200" },
+        { id: 13, name: "Margherita Pizza", price: 199, cat: "Gourmet Pizzas", desc: "Pure Cheese", img: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?w=200" },
+        { id: 14, name: "Cheese Burst Pizza", price: 349, cat: "Gourmet Pizzas", desc: "Extra Melty", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200" },
+        { id: 15, name: "Veg Supreme", price: 310, cat: "Gourmet Pizzas", desc: "Loaded Toppings", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200" },
+        { id: 16, name: "Tandoori Paneer Pizza", price: 320, cat: "Gourmet Pizzas", desc: "Paneer Power", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200" },
+
+        { id: 17, name: "Veg Maharaja Burger", price: 149, cat: "Classic Burgers", desc: "Big Double Patty", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200" },
+        { id: 18, name: "Paneer Tikka Burger", price: 160, cat: "Classic Burgers", desc: "Spicy Paneer", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=200" },
+        { id: 19, name: "Cheesy Veg Burger", price: 110, cat: "Classic Burgers", desc: "Veggie with Cheese", img: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=200" },
+        { id: 20, name: "Aloo Tikki Burger", price: 79, cat: "Classic Burgers", desc: "Crispy Potato", img: "https://images.unsplash.com/photo-1534790561517-40e9417ef746?w=200" },
+
+        { id: 21, name: "Veg Cheese Sandwich", price: 120, cat: "Snacks & Quick Bites", desc: "Grilled Cheese", img: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=200" },
+        { id: 22, name: "Paneer Wrap", price: 150, cat: "Snacks & Quick Bites", desc: "Paneer Roll", img: "https://images.unsplash.com/photo-1626078436897-6966679dc679?w=200" },
+        { id: 23, name: "Garlic Bread", price: 140, cat: "Snacks & Quick Bites", desc: "Herby Toast", img: "https://images.unsplash.com/photo-1623238914712-0886a62174c8?w=200" },
+        { id: 24, name: "Peri Peri Fries", price: 110, cat: "Snacks & Quick Bites", desc: "Spicy Fries", img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200" },
+        { id: 25, name: "Masala Maggi", price: 70, cat: "Snacks & Quick Bites", desc: "Spicy Noodles", img: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?w=200" },
+
+        { id: 26, name: "White Sauce Pasta", price: 220, cat: "Continental Specials", desc: "Creamy Alfredo", img: "https://images.unsplash.com/photo-1645112481338-3014556a3940?w=200" },
+        { id: 27, name: "Paneer Momos", price: 120, cat: "Continental Specials", desc: "Veg Dumplings", img: "https://images.unsplash.com/photo-1625220194771-7ebdea0b70b4?w=200" },
+        { id: 28, name: "Pink Sauce Pasta", price: 240, cat: "Continental Specials", desc: "Mixed Sauce", img: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=200" },
+        { id: 29, name: "Chilli Paneer", price: 180, cat: "Continental Specials", desc: "Indo-Chinese", img: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200" },
+        { id: 30, name: "Veg Spring Rolls", price: 130, cat: "Continental Specials", desc: "Crispy Veggie", img: "https://images.unsplash.com/photo-1544333346-64e4fe18274b?w=200" },
+
+        { id: 31, name: "Brownie Sizzler", price: 180, cat: "Sweet Desserts", desc: "Hot Brownie", img: "https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=200" },
+        { id: 32, name: "Choco Lava Cake", price: 130, cat: "Sweet Desserts", desc: "Melty Heart", img: "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=200" },
+        { id: 33, name: "Choco Mousse", price: 110, cat: "Sweet Desserts", desc: "Creamy Choco", img: "https://images.unsplash.com/photo-1541783245831-57d6fb0926d3?w=200" },
+        { id: 34, name: "Red Velvet Jar", price: 130, cat: "Sweet Desserts", desc: "Cake in Jar", img: "https://images.unsplash.com/photo-1586788680434-30d324b2d46f?w=200" },
+        { id: 35, name: "Choco Donut", price: 80, cat: "Sweet Desserts", desc: "Glazed Donut", img: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200" }
+    ];
+
+    let cartArr = [];
+
+    function loadMenu() {
+        const container = document.getElementById('menu-content');
+        let lastCat = "";
+        menuData.forEach(item => {
+            if(item.cat !== lastCat) {
+                lastCat = item.cat;
+                container.innerHTML += `<div class="category-header"><h2>${lastCat}</h2><hr></div>`;
+            }
+            container.innerHTML += `<div class="item-card">
+                <img src="${item.img}" class="item-img">
+                <div class="item-info">
+                    <h4>${item.name}</h4><p>${item.desc}</p>
+                    <div class="price-row"><span class="price">₹${item.price}</span><button class="add-btn" onclick="addToCart(${item.id})">ADD</button></div>
+                </div>
+            </div>`;
+        });
+    }
+
+    function addToCart(id) {
+        const product = menuData.find(p => p.id === id);
+        cartArr.push({...product, cartId: Date.now()});
+        updateCartBar();
+    }
+
+    function updateCartBar() {
+        const bar = document.getElementById('cartBar');
+        if(cartArr.length > 0) {
+            bar.style.display = 'flex';
+            const total = cartArr.reduce((s, i) => s + i.price, 0);
+            document.getElementById('cartStatus').innerText = `${cartArr.length} Items | ₹${total}`;
+        } else { bar.style.display = 'none'; }
+    }
+
+    function openOrder() {
+        document.getElementById('orderModal').style.display = 'flex';
+        const display = document.getElementById('cartDisplay');
+        display.innerHTML = ""; let sum = 0;
+        cartArr.forEach(i => {
+            sum += i.price;
+            display.innerHTML += `<div class="cart-item"><span>${i.name}</span><span>₹${i.price}</span></div>`;
+        });
+        document.getElementById('totalSum').innerText = sum;
+    }
+
+    function closeOrder() { document.getElementById('orderModal').style.display = 'none'; }
+
+    function placeFinalOrder() {
+        const table = document.getElementById('tableSelect').value;
+        if(!table) { alert("Please select Table No!"); return; }
+        
+        let msg = `*NEW ORDER - THE CAFE 24x7*%0A*Table:* ${table}%0A%0A`;
+        cartArr.forEach(i => msg += `- ${i.name} (₹${i.price})%0A`);
+        msg += `%0A*Total: ₹${document.getElementById('totalSum').innerText}*`;
+        
+        window.location.href = `https://wa.me/919767216983?text=${msg}`;
+    }
+
+    loadMenu();
+</script>
+</body>
+</html>
